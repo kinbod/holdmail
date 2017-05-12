@@ -146,7 +146,7 @@ HoldMail is licensed under the [Apache 2.0](LICENSE) license.
 
 ## Sparta Systems
 
-© Copyright 2016 Sparta Systems Inc. 
+© Copyright 2017 Sparta Systems Inc. 
 
 [Sparta Systems](http://www.spartasystems.com) helps customers bring products to market safely and efficiently by delivering quality management software solutions that provide control and transparency throughout the enterprise and their critical supplier network. 
 
