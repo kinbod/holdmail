@@ -63,7 +63,7 @@ public class MessageControllerTest {
     private MessageSummaryMapper messageSummaryMapperMock;
 
     @Mock
-    private MimeContentIdPreParser mimeContentIdPreParserMock;
+    private HTMLPreprocessor htmlPreprocessorMock;
 
     @Mock
     private Pageable pageableMock;
@@ -108,7 +108,7 @@ public class MessageControllerTest {
 
         MessageSummary summaryMock = setupSpyToLoadMessageSummaryMock(900, null, null, "original_html");
 
-        when(mimeContentIdPreParserMock.replaceWithRestPath(900, summaryMock.getMessageBodyHTML())).thenReturn("modified_html");
+        when(htmlPreprocessorMock.preprocess(900, summaryMock.getMessageBodyHTML())).thenReturn("modified_html");
 
         ResponseEntity expectedResponse = mock(ResponseEntity.class);
         doReturn(expectedResponse).when(messageControllerSpy).serveContent("modified_html", TEXT_HTML);
@@ -133,10 +133,13 @@ public class MessageControllerTest {
     @Test
     public void shouldGetMessageContextRAW() throws Exception {
 
-        MessageSummary summaryMock = setupSpyToLoadMessageSummaryMock(129, "raw_msg", null, null);
+        String raw = "original-mime-message";
+
+        Message domainMock = mock(Message.class);
+        when(domainMock.getRawMessage()).thenReturn(raw);
+        when(messageServiceMock.getMessage(129)).thenReturn(domainMock);
 
         ResponseEntity expectedResponse = mock(ResponseEntity.class);
-        String raw = summaryMock.getMessageRaw();
         doReturn(expectedResponse).when(messageControllerSpy).serveContent(raw, TEXT_PLAIN);
 
         assertThat(messageControllerSpy.getMessageContentRAW(129)).isEqualTo(expectedResponse);

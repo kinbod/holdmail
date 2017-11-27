@@ -21,7 +21,7 @@ plugins {
     id 'maven'
     id 'maven-publish'
     id 'jacoco'
-    id 'org.springframework.boot' version '1.5.2.RELEASE'
+    id 'org.springframework.boot' version '1.5.8.RELEASE'
     id "org.nosphere.apache.rat" version "0.3.0"
     id "nebula.ospackage" version "3.6.1"
     id "com.moowork.node" version "1.1.1"
@@ -49,22 +49,22 @@ dependencies {
         exclude(module: 'commons-logging')
     }
 
-    compile 'com.h2database:h2:1.4.193'
+    compile 'com.h2database:h2:1.4.196'
     compile 'org.subethamail:subethasmtp:3.1.7'
-    compile 'org.apache.commons:commons-lang3:3.5'
-    compile 'commons-io:commons-io:2.5'
-    compile 'org.apache.james:apache-mime4j:0.7.2'
-    compile 'org.flywaydb:flyway-core:4.1.2'
-
-    testCompile 'org.assertj:assertj-core:3.6.2'
-    testCompile 'org.powermock:powermock-module-junit4:1.6.6'
-    testCompile 'org.powermock:powermock-api-mockito:1.6.6'
-    testCompile 'nl.jqno.equalsverifier:equalsverifier:2.2.1'
-    testCompile 'io.rest-assured:rest-assured:3.0.2'
-    testCompile 'io.rest-assured:spring-mock-mvc:3.0.2'
-    testCompile 'io.rest-assured:json-schema-validator:3.0.2'
+    compile 'org.apache.commons:commons-lang3:3.6'
+    compile 'commons-io:commons-io:2.5'	
+    compile 'org.apache.james:apache-mime4j:0.8.1'
+    compile 'org.flywaydb:flyway-core:4.2.0'
+	
+    testCompile 'org.assertj:assertj-core:3.8.0'
+    testCompile 'org.powermock:powermock-module-junit4:1.7.3'
+    testCompile 'org.powermock:powermock-api-mockito:1.7.3'
+    testCompile 'nl.jqno.equalsverifier:equalsverifier:2.3.3'
+    testCompile 'io.rest-assured:rest-assured:3.0.5'
+    testCompile 'io.rest-assured:spring-mock-mvc:3.0.5'
+    testCompile 'io.rest-assured:json-schema-validator:3.0.5'
     testCompile 'com.github.springtestdbunit:spring-test-dbunit:1.3.0'
-    testCompile('org.dbunit:dbunit:2.5.3') {
+    testCompile('org.dbunit:dbunit:2.5.4') {
         exclude(module: 'junit')
     }
 
@@ -85,15 +85,31 @@ springBoot {
 
 rat {
     excludes = [
-            'node_modules/**',
+            'client/node_modules/**',
+            'client/dist/**',
+            'client/.babelrc',
+            'client/.editorconfig',
+            'client/.eslintignore',
+            'client/.eslintrc.js',
+            'client/.postcssrc.js',
+            'client/README.md',
+            'client/config/',
+            'client/static/.gitkeep',
+            'client/test/unit/.eslintrc',
+            'client/test/unit/coverage/',
+            'client/test/e2e/custom-assertions/elementCount.js',
+            'client/test/e2e/nightwatch.conf.js',
+            'client/test/e2e/runner.js',
+            'client/test/e2e/specs/test.js',
             '.idea/**',
+            '**/*.iml',
             'README.md',
             'CONTRIBUTING.md',
             '.github/*',
             'docker/',
-            'src/main/resources/static/js/bundle/holdmail.js',
             'src/main/resources/db/migration/*.sql',
             'src/main/resources/banner.txt',
+            'src/main/resources/static/**',
             'src/test/resources/mails/**',
             'scripts/rpm/**',
             '**/.gradle/**',
@@ -170,14 +186,44 @@ buildRpm {
     link('/etc/init.d/holdmail', RPM_INSTALL_DIR + '/bin/holdmail.jar')
 }
 
+task runNpmInstall(type: NpmTask) {
+  workingDir = file("${project.projectDir}/client")
 
-task npmTest(type: NpmTask) {
-    args = ['run', 'test']
+  args = ['install']
 }
 
+task compileUI(type: NpmTask) {
+  dependsOn 'runNpmInstall'
 
-test.dependsOn npmTest
-compileJava.dependsOn('npmInstall')
+  workingDir = file("${project.projectDir}/client")
+
+  args = ['run', 'build']
+}
+
+task testUI(type: NpmTask) {
+  dependsOn 'runNpmInstall'
+
+  workingDir = file("${project.projectDir}/client")
+
+  args = ['run', 'test']
+}
+
+task buildUI(type: Copy) {
+  dependsOn 'compileUI'
+
+  from "${project.projectDir}/client/dist"
+  into "${project.projectDir}/src/main/resources/static"
+}
+
+test {
+    testLogging {
+        // default test failure logging doesn't show assertion failure detail (unless gradle -i is used)
+        exceptionFormat = 'full'
+    }
+}
+
+test.dependsOn testUI
+compileJava.dependsOn('buildUI')
 tasks.build.dependsOn('buildRpm')
 
 task srcJAR(type: Jar) {

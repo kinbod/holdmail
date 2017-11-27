@@ -55,7 +55,7 @@ public class MessageController {
     private MessageSummaryMapper messageSummaryMapper;
 
     @Autowired
-    private MimeContentIdPreParser mimeContentIdPreParser;
+    private HTMLPreprocessor htmlPreprocessor;
 
     @RequestMapping()
     public MessageList getMessages(
@@ -76,7 +76,7 @@ public class MessageController {
     public ResponseEntity getMessageContentHTML(@PathVariable("messageId") long messageId) {
 
         MessageSummary summary = loadMessageSummary(messageId);
-        String htmlSubstituted = mimeContentIdPreParser.replaceWithRestPath(messageId, summary.getMessageBodyHTML());
+        String htmlSubstituted = htmlPreprocessor.preprocess(messageId, summary.getMessageBodyHTML());
         return serveContent(htmlSubstituted, TEXT_HTML);
     }
 
@@ -90,8 +90,8 @@ public class MessageController {
     @RequestMapping(value = "/{messageId}/raw")
     public ResponseEntity getMessageContentRAW(@PathVariable("messageId") long messageId) {
 
-        MessageSummary summary = loadMessageSummary(messageId);
-        return serveContent(summary.getMessageRaw(), TEXT_PLAIN);
+        Message message = messageService.getMessage(messageId);
+        return serveContent(message.getRawMessage(), TEXT_PLAIN);
     }
 
     @RequestMapping(value = "/{messageId}/content/{contentId}")
